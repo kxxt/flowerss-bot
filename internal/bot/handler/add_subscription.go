@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 	tb "gopkg.in/telebot.v3"
 
+	"github.com/indes/flowerss-bot/internal/bot/chat"
 	"github.com/indes/flowerss-bot/internal/bot/message"
 	"github.com/indes/flowerss-bot/internal/core"
 	"github.com/indes/flowerss-bot/internal/log"
@@ -92,11 +94,11 @@ func (a *AddSubscription) addSubscriptionForChannel(ctx tb.Context, channelName 
 	}
 
 	bot := ctx.Bot()
-	channelChat, err := bot.ChatByUsername(channelName)
+	channelChat, err := chat.GetChatByIdOrUsername(bot, channelName)
 	if err != nil {
 		return ctx.Reply("获取频道信息失败")
 	}
-	if channelChat.Type != tb.ChatChannel {
+	if channelChat.Type != tb.ChatChannel && channelChat.Type != tb.ChatChannelPrivate {
 		return ctx.Reply("您或Bot不是频道管理员，无法设置订阅")
 	}
 
@@ -132,10 +134,10 @@ func (a *AddSubscription) addSubscriptionForChannel(ctx tb.Context, channelName 
 }
 
 func (a *AddSubscription) Handle(ctx tb.Context) error {
-	mention := message.MentionFromMessage(ctx.Message())
-	if mention != "" {
-		// has mention, add subscription for channel
-		return a.addSubscriptionForChannel(ctx, mention)
+	fields := strings.Fields(ctx.Text())
+	fmt.Println("fields", fields)
+	if len(fields) > 2 {
+		return a.addSubscriptionForChannel(ctx, fields[1])
 	}
 	return a.addSubscriptionForChat(ctx)
 }

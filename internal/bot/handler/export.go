@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 	tb "gopkg.in/telebot.v3"
 
-	"github.com/indes/flowerss-bot/internal/bot/message"
+	"github.com/indes/flowerss-bot/internal/bot/chat"
 	"github.com/indes/flowerss-bot/internal/core"
 	"github.com/indes/flowerss-bot/internal/log"
 	"github.com/indes/flowerss-bot/internal/model"
@@ -35,7 +35,7 @@ func (e *Export) Command() string {
 
 func (e *Export) getChannelSources(bot *tb.Bot, opUserID int64, channelName string) ([]*model.Source, error) {
 	// 导出channel订阅
-	channelChat, err := bot.ChatByUsername(channelName)
+	channelChat, err := chat.GetChatByIdOrUsername(bot, channelName)
 	if err != nil {
 		return nil, errors.New("无法获取频道信息")
 	}
@@ -66,7 +66,12 @@ func (e *Export) getChannelSources(bot *tb.Bot, opUserID int64, channelName stri
 }
 
 func (e *Export) Handle(ctx tb.Context) error {
-	mention := message.MentionFromMessage(ctx.Message())
+	fields := strings.Fields(ctx.Text())
+	fmt.Println("fields", fields)
+	mention := ""
+	if len(fields) > 1 {
+		mention = fields[1]
+	}
 	var sources []*model.Source
 	if mention == "" {
 		var err error

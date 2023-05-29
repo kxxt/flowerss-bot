@@ -1,10 +1,25 @@
 package chat
 
 import (
+	"strconv"
+	"strings"
+
 	tb "gopkg.in/telebot.v3"
 
 	"github.com/indes/flowerss-bot/internal/log"
 )
+
+func GetChatByIdOrUsername(bot *tb.Bot, input string) (*tb.Chat, error) {
+	if strings.HasPrefix(input, "@") {
+		return bot.ChatByUsername(input)
+	} else {
+		id, err := strconv.ParseInt(input, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		return bot.ChatByID(id)
+	}
+}
 
 func IsChatAdmin(bot *tb.Bot, chat *tb.Chat, userID int64) bool {
 	if chat == nil || bot == nil {

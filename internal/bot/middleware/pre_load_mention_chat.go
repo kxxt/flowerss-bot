@@ -1,7 +1,9 @@
 package middleware
 
 import (
-	"github.com/indes/flowerss-bot/internal/bot/message"
+	"strings"
+
+	"github.com/indes/flowerss-bot/internal/bot/chat"
 	"github.com/indes/flowerss-bot/internal/bot/session"
 	"github.com/indes/flowerss-bot/internal/log"
 
@@ -11,11 +13,11 @@ import (
 func PreLoadMentionChat() tb.MiddlewareFunc {
 	return func(next tb.HandlerFunc) tb.HandlerFunc {
 		return func(c tb.Context) error {
-			mention := message.MentionFromMessage(c.Message())
-			if mention != "" {
-				chat, err := c.Bot().ChatByUsername(mention)
+			fields := strings.Fields(c.Text())
+			if len(fields) > 1 {
+				chat, err := chat.GetChatByIdOrUsername(c.Bot(), fields[1])
 				if err != nil {
-					log.Errorf("pre load mention %s chat failed, %v", mention, err)
+					log.Errorf("pre load mention %s chat failed, %v", fields[1], err)
 					return next(c)
 				}
 				c.Set(session.StoreKeyMentionChat.String(), chat)

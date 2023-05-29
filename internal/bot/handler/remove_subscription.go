@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	tb "gopkg.in/telebot.v3"
 
@@ -39,7 +40,7 @@ func (s *RemoveSubscription) removeForChannel(ctx tb.Context, channelName string
 		return ctx.Send("频道退订请使用' /unsub @ChannelID URL ' 命令")
 	}
 
-	channelChat, err := s.bot.ChatByUsername(channelName)
+	channelChat, err := chat.GetChatByIdOrUsername(s.bot, channelName)
 	if err != nil {
 		return ctx.Reply("获取频道信息错误")
 	}
@@ -62,6 +63,7 @@ func (s *RemoveSubscription) removeForChannel(ctx tb.Context, channelName string
 		return ctx.Reply("退订失败")
 	}
 	return ctx.Send(
+		// TODO: Fix link in case of private channel
 		fmt.Sprintf(
 			"频道 [%s](https://t.me/%s) 退订 [%s](%s) 成功",
 			channelChat.Title, channelChat.Username, source.Title, source.Link,
@@ -127,9 +129,10 @@ func (s *RemoveSubscription) removeForChat(ctx tb.Context) error {
 }
 
 func (s *RemoveSubscription) Handle(ctx tb.Context) error {
-	mention := message.MentionFromMessage(ctx.Message())
-	if mention != "" {
-		return s.removeForChannel(ctx, mention)
+	fields := strings.Fields(ctx.Text())
+	fmt.Println("fields", fields)
+	if len(fields) > 1 {
+		return s.removeForChannel(ctx, fields[1])
 	}
 	return s.removeForChat(ctx)
 }

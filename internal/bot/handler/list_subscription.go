@@ -8,7 +8,6 @@ import (
 	tb "gopkg.in/telebot.v3"
 
 	"github.com/indes/flowerss-bot/internal/bot/chat"
-	"github.com/indes/flowerss-bot/internal/bot/message"
 	"github.com/indes/flowerss-bot/internal/core"
 	"github.com/indes/flowerss-bot/internal/log"
 	"github.com/indes/flowerss-bot/internal/model"
@@ -52,7 +51,8 @@ func (l *ListSubscription) listChatSubscription(ctx tb.Context) error {
 }
 
 func (l *ListSubscription) listChannelSubscription(ctx tb.Context, channelName string) error {
-	channelChat, err := ctx.Bot().ChatByUsername(channelName)
+	channelChat, err := chat.GetChatByIdOrUsername(ctx.Bot(), channelName)
+	fmt.Println("ChannelChat", channelChat)
 	if err != nil {
 		return ctx.Send("获取频道信息错误")
 	}
@@ -71,9 +71,10 @@ func (l *ListSubscription) listChannelSubscription(ctx tb.Context, channelName s
 }
 
 func (l *ListSubscription) Handle(ctx tb.Context) error {
-	mention := message.MentionFromMessage(ctx.Message())
-	if mention != "" {
-		return l.listChannelSubscription(ctx, mention)
+	fields := strings.Fields(ctx.Text())
+	fmt.Println("fields", fields)
+	if len(fields) > 1 {
+		return l.listChannelSubscription(ctx, fields[1])
 	}
 	return l.listChatSubscription(ctx)
 }
