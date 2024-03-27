@@ -42,7 +42,22 @@ func (s *SetUpdateInterval) Handle(ctx tb.Context) error {
 	msg := s.getMessageWithoutMention(ctx)
 	args := strings.Split(strings.TrimSpace(msg), " ")
 	if len(args) < 2 {
-		return ctx.Reply("/setinterval [interval] [sourceID] 设置订阅刷新频率（可设置多个sub id，以空格分割）")
+		return ctx.Reply("/setinterval [chatID] [interval] [sourceID] 设置订阅刷新频率（可设置多个sub id，以空格分割）(0 表示使用当前 Chat)")
+	}
+
+	var subscribeUserID int64 = 0
+	var err error
+	if strings.HasPrefix(args[0], "@") {
+		var chatID *tb.Chat
+		chatID, err = ctx.Bot().ChatByUsername(args[0])
+		if err == nil {
+			subscribeUserID = chatID.ID
+		}
+	} else {
+		subscribeUserID, err = strconv.ParseInt(args[0], 10, 64)
+	}
+	if err != nil {
+		return ctx.Reply("请输入正确的 Chat ID")
 	}
 
 	interval, err := strconv.Atoi(args[0])
@@ -50,13 +65,15 @@ func (s *SetUpdateInterval) Handle(ctx tb.Context) error {
 		return ctx.Reply("请输入正确的抓取频率")
 	}
 
-	subscribeUserID := ctx.Message().Chat.ID
-	mentionChat, _ := session.GetMentionChatFromCtxStore(ctx)
-	if mentionChat != nil {
-		subscribeUserID = mentionChat.ID
+	if subscribeUserID == 0 {
+		subscribeUserID = ctx.Message().Chat.ID
+		mentionChat, _ := session.GetMentionChatFromCtxStore(ctx)
+		if mentionChat != nil {
+			subscribeUserID = mentionChat.ID
+		}
 	}
 
-	for _, id := range args[1:] {
+	for _, id := range args[2:] {
 		sourceID := cast.ToUint(id)
 		if err := s.core.SetSubscriptionInterval(
 			context.Background(), subscribeUserID, sourceID, interval,
